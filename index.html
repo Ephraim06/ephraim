@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover" />
   <link rel="apple-touch-icon" sizes="180x180" href="assets/favicon_io/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon_io/favicon-32x32.png" />
   <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon_io/favicon-16x16.png" />
@@ -74,6 +74,7 @@
       line-height: 1.6;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
+      padding-bottom: calc(100px + env(safe-area-inset-bottom, 0px));
     }
 
     /* Subtle dot pattern background */
@@ -116,11 +117,15 @@
     /* Dock navigation */
     .dock {
       position: fixed;
-      bottom: clamp(12px, 2vw, 20px);
-      left: 50%;
-      transform: translateX(-50%);
+      bottom: calc(clamp(12px, 2vw, 20px) + env(safe-area-inset-bottom, 0px));
+      left: max(12px, env(safe-area-inset-left, 0px));
+      right: max(12px, env(safe-area-inset-right, 0px));
+      width: fit-content;
+      max-width: calc(100% - max(12px, env(safe-area-inset-left, 0px)) - max(12px, env(safe-area-inset-right, 0px)));
+      margin-inline: auto;
       z-index: 1000;
-      display: flex;
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
       gap: 4px;
       padding: 6px 12px;
       background: rgba(255, 255, 255, 0.85);
@@ -132,8 +137,10 @@
     }
 
     .dock-item {
-      width: 40px;
-      height: 40px;
+      width: 44px;
+      max-width: 100%;
+      min-width: 0;
+      height: 44px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -143,6 +150,11 @@
       transition: all 0.25s ease;
       font-size: 16px;
       position: relative;
+    }
+
+    .dock-item:focus-visible {
+      outline: 2px solid #1d1d1f;
+      outline-offset: -2px;
     }
 
     .dock-item:hover,
@@ -197,18 +209,76 @@
       position: relative;
       overflow: hidden;
       aspect-ratio: 16 / 11;
-      background: #f5f5f7;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 18px 30px;
+      background: radial-gradient(ellipse at 50% 35%, #ffffff 0%, #eef0f4 65%, #e4e7ec 100%);
     }
 
-    .project-img-wrap img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
+    .project-laptop {
+      position: relative;
+      width: 92%;
+      padding: 6px 6px 9px;
+      border-radius: 10px 10px 3px 3px;
+      background: #121315;
+      border: 1px solid #62666d;
+      box-shadow: 0 12px 20px -10px rgba(20, 28, 40, 0.45);
       transition: transform 0.5s ease;
     }
 
-    .project-card:hover .project-img-wrap img {
-      transform: scale(1.04);
+    /* Camera notch and the tapered aluminium base. */
+    .project-laptop::before {
+      content: '';
+      position: absolute;
+      top: 5px;
+      left: 44%;
+      width: 12%;
+      height: 7px;
+      border-radius: 0 0 4px 4px;
+      background: #121315;
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    .project-laptop::after {
+      content: '';
+      position: absolute;
+      left: -7%;
+      bottom: -8px;
+      width: 114%;
+      height: 9px;
+      border-radius: 1px 1px 45% 45% / 1px 1px 100% 100%;
+      background: linear-gradient(90deg, #8f969f, #dfe3e8 8%, #b8bec6 42%, #8a929c 44%, #8a929c 56%, #b8bec6 58%, #dfe3e8 92%, #8f969f);
+      box-shadow: 0 2px 2px rgba(20, 28, 40, 0.18);
+      pointer-events: none;
+    }
+
+    .project-img-wrap .project-laptop img {
+      display: block;
+      width: 100%;
+      height: auto;
+      aspect-ratio: 16 / 10;
+      object-fit: cover;
+      object-position: top;
+      border-radius: 4px 4px 1px 1px;
+    }
+
+    .project-card:hover .project-laptop {
+      transform: translateY(-3px) scale(1.025);
+    }
+
+    .project-device-preview { padding: 12px; }
+    .project-device-preview > img {
+      width: 100%;
+      height: 100%;
+      min-height: 0;
+      object-fit: contain;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .project-laptop { transition: none; }
+      .project-card:hover .project-laptop { transform: none; }
     }
 
     .zoom-btn {
@@ -233,7 +303,8 @@
       z-index: 5;
     }
 
-    .project-img-wrap:hover .zoom-btn {
+    .project-img-wrap:hover .zoom-btn,
+    .project-img-wrap:focus-within .zoom-btn {
       opacity: 1;
       visibility: visible;
       transform: translate(-50%, -50%) scale(1);
@@ -260,15 +331,27 @@
     .hidden-projects-wrap {
       display: grid;
       grid-template-rows: 0fr;
-      transition: grid-template-rows 0.5s ease;
+      opacity: 0;
+      visibility: hidden;
+      overflow-anchor: none;
+      transition: grid-template-rows 0.65s cubic-bezier(0.22, 1, 0.36, 1),
+        opacity 0.35s ease, visibility 0s linear 0.65s;
     }
 
     .hidden-projects-wrap.expanded {
       grid-template-rows: 1fr;
+      opacity: 1;
+      visibility: visible;
+      transition-delay: 0s;
     }
 
     .hidden-projects-inner {
+      min-height: 0;
       overflow: hidden;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .hidden-projects-wrap { transition: none; }
     }
 
     /* Buttons */
@@ -374,10 +457,133 @@
       min-height: 120px;
     }
 
+    .contact-layout {
+      display: grid;
+      gap: 24px;
+      align-items: start;
+    }
+
+    .contact-panel {
+      padding: clamp(24px, 4vw, 36px);
+      border-radius: 24px;
+      background: linear-gradient(145deg, #f5f5f7, #ffffff);
+    }
+
+    .contact-panel h3 {
+      font-size: clamp(24px, 3vw, 30px);
+      line-height: 1.2;
+      letter-spacing: -0.03em;
+      margin-bottom: 12px;
+    }
+
+    .contact-panel-copy {
+      color: #6e6e73;
+      font-size: 14px;
+      line-height: 1.8;
+      max-width: 32ch;
+    }
+
+    .contact-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 28px 0 32px;
+    }
+
+    .contact-cv {
+      border-top: 1px solid #e5e5ea;
+      padding-top: 24px;
+    }
+
+    .contact-cv p {
+      margin-bottom: 14px;
+      font-size: 13px;
+      color: #6e6e73;
+    }
+
+    @media (min-width: 768px) {
+      .contact-layout { grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr); }
+    }
+
+    .contact-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      background: #ffffff;
+      border: 1px solid #e5e5ea;
+      color: #1d1d1f;
+      text-decoration: none;
+      flex-shrink: 0;
+      transition: background 0.2s ease;
+    }
+
+    a.contact-icon:hover { background: #e8e8ed; }
+    a.contact-icon:focus-visible {
+      outline: 2px solid #1d1d1f;
+      outline-offset: 3px;
+    }
+
+    .btn-primary:disabled { opacity: 0.65; cursor: wait; }
+    .form-spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255, 255, 255, 0.35);
+      border-top-color: #ffffff;
+      border-radius: 50%;
+      animation: form-spin 0.8s linear infinite;
+    }
+    @keyframes form-spin { to { transform: rotate(360deg); } }
+    @media (prefers-reduced-motion: reduce) {
+      .form-spinner { animation: none; }
+    }
+    .form-error { margin-top: 12px; font-size: 14px; color: #b42318; }
+    .field-error { margin-top: 6px; font-size: 12px; color: #b42318; }
+    .input-field[aria-invalid="true"] {
+      border-color: #b42318;
+      background: #fff7f6;
+    }
+    .input-field[aria-invalid="true"]:focus {
+      border-color: #b42318;
+      box-shadow: 0 0 0 3px rgba(180, 35, 24, 0.12);
+    }
+    .success-modal {
+      width: min(420px, calc(100% - 32px));
+      margin: auto;
+      padding: 36px 28px;
+      border: 1px solid #e5e5ea;
+      border-radius: 24px;
+      text-align: center;
+      color: #1d1d1f;
+      background: #ffffff;
+      box-shadow: 0 24px 80px rgba(0, 0, 0, 0.18);
+    }
+    .success-modal::backdrop { background: rgba(29, 29, 31, 0.45); backdrop-filter: blur(5px); }
+    .success-mark {
+      display: grid;
+      place-items: center;
+      width: 56px;
+      height: 56px;
+      margin: 0 auto 20px;
+      border-radius: 50%;
+      background: #ecfdf3;
+      color: #15803d;
+      font-size: 24px;
+    }
+    .success-modal h2 { font-size: 24px; font-weight: 600; margin-bottom: 10px; }
+    .success-modal p { font-size: 14px; color: #6e6e73; margin-bottom: 24px; }
+
     /* Footer */
     .site-footer {
       background: #1d1d1f;
       color: #ffffff;
+      width: max(90%, calc(100% - 32px));
+      margin: 24px auto 12px;
+      border-radius: clamp(24px, 4vw, 36px);
+      box-shadow: 0 16px 40px -16px rgba(29, 29, 31, 0.3);
+      overflow: hidden;
     }
 
     /* Scrollbar */
@@ -412,8 +618,8 @@
       }
 
       .dock-item {
-        width: 56px;
-        height: 56px;
+        width: clamp(44px, 8.75vw, 56px);
+        height: clamp(44px, 8.75vw, 56px);
         border-radius: 12px;
         font-size: 18px;
       }
@@ -699,6 +905,18 @@
       <!-- Additional skill categories -->
       <div class="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div class="card p-5">
+          <h4 class="font-semibold text-sm mb-2">Development</h4>
+          <p class="text-xs text-muted">REST API development &amp; integration, role-based access control (RBAC), responsive web design, Stripe payment integration, Inertia.js, Bootstrap, Google Maps API integration, web performance optimization</p>
+        </div>
+        <div class="card p-5">
+          <h4 class="font-semibold text-sm mb-2">Testing &amp; Quality</h4>
+          <p class="text-xs text-muted">Manual testing, feature validation, multi-device testing, API testing with Postman</p>
+        </div>
+        <div class="card p-5">
+          <h4 class="font-semibold text-sm mb-2">Application Support &amp; Training</h4>
+          <p class="text-xs text-muted">Technical troubleshooting, software training, user onboarding, technical documentation, knowledge base management, training materials, data migration, backup management</p>
+        </div>
+        <div class="card p-5">
           <h4 class="font-semibold text-sm mb-2">Application & Production Support</h4>
           <p class="text-xs text-muted">Incident triage, RCA, SLA management, escalation handling, user provisioning</p>
         </div>
@@ -724,7 +942,7 @@
         <!-- Project 1 -->
         <div class="project-card group">
           <div class="project-img-wrap">
-            <img src="assets/img/projects/Beiramar.jpg" alt="Beiramar-Blouberg" loading="lazy" />
+            <div class="project-laptop"><img src="assets/img/projects/Beiramar.jpg" alt="Beiramar-Blouberg" loading="lazy" /></div>
             <a href="assets/img/projects/Beiramar.jpg" class="zoom-btn" title="View larger"
               aria-label="View larger image">
               <i class="fas fa-plus"></i>
@@ -751,7 +969,7 @@
         <!-- Project 2 -->
         <div class="project-card group">
           <div class="project-img-wrap">
-            <img src="assets/img/projects/Albus-waveside-villa.jpg" alt="Albus Waveside Villa" loading="lazy" />
+            <div class="project-laptop"><img src="assets/img/projects/Albus-waveside-villa.jpg" alt="Albus Waveside Villa" loading="lazy" /></div>
             <a href="assets/img/projects/Albus-waveside-villa.jpg" class="zoom-btn" title="View larger"
               aria-label="View larger image">
               <i class="fas fa-plus"></i>
@@ -778,7 +996,7 @@
         <!-- Project 3 -->
         <div class="project-card group">
           <div class="project-img-wrap">
-            <img src="assets/img/projects/events-management-app.jpg" alt="Job Management System" loading="lazy" />
+            <div class="project-laptop"><img src="assets/img/projects/events-management-app.jpg" alt="Job Management System" loading="lazy" /></div>
             <a href="assets/img/projects/events-management-app.jpg" class="zoom-btn" title="View larger"
               aria-label="View larger image">
               <i class="fas fa-plus"></i>
@@ -804,14 +1022,14 @@
       </div>
 
       <!-- Hidden projects -->
-      <div class="hidden-projects-wrap mt-4 sm:mt-6" id="hiddenProjectsWrap">
+      <div class="hidden-projects-wrap" id="hiddenProjectsWrap" inert>
         <div class="hidden-projects-inner">
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 pt-2">
 
             <!-- Project 4 -->
             <div class="project-card group">
               <div class="project-img-wrap">
-                <img src="assets/img/projects/happy-cape-tours.png" alt="Happy Cape Tours" loading="lazy" />
+                <div class="project-laptop"><img src="assets/img/projects/happy-cape-tours.png" alt="Happy Cape Tours" loading="lazy" /></div>
                 <a href="assets/img/projects/happy-cape-tours.png" class="zoom-btn" title="View larger"
                   aria-label="View larger image">
                   <i class="fas fa-plus"></i>
@@ -839,7 +1057,7 @@
             <!-- Project 5 -->
             <div class="project-card group">
               <div class="project-img-wrap">
-                <img src="assets/img/projects/atbestwecare.png" alt="At Best We Care" loading="lazy" />
+                <div class="project-laptop"><img src="assets/img/projects/atbestwecare.png" alt="At Best We Care" loading="lazy" /></div>
                 <a href="assets/img/projects/atbestwecare.png" class="zoom-btn" title="View larger"
                   aria-label="View larger image">
                   <i class="fas fa-plus"></i>
@@ -867,7 +1085,7 @@
             <!-- Project 6 -->
             <div class="project-card group">
               <div class="project-img-wrap">
-                <img src="assets/img/projects/tawcon-projects.png" alt="Tawcon Projects" loading="lazy" />
+                <div class="project-laptop"><img src="assets/img/projects/tawcon-projects.png" alt="Tawcon Projects" loading="lazy" /></div>
                 <a href="assets/img/projects/tawcon-projects.png" class="zoom-btn" title="View larger"
                   aria-label="View larger image">
                   <i class="fas fa-plus"></i>
@@ -895,7 +1113,7 @@
              <!-- Project 7 -->
             <div class="project-card group">
               <div class="project-img-wrap">
-                <img src="assets/img/projects/compassrosetravel.png" alt="Compass Rose Travel" loading="lazy" />
+                <div class="project-laptop"><img src="assets/img/projects/compassrosetravel.png" alt="Compass Rose Travel" loading="lazy" /></div>
                 <a href="assets/img/projects/compassrosetravel.png" class="zoom-btn" title="View larger"
                   aria-label="View larger image">
                   <i class="fas fa-plus"></i>
@@ -920,7 +1138,7 @@
             <!-- Project 8 -->
             <div class="project-card group">
               <div class="project-img-wrap">
-                <img src="assets/img/projects/bizflow.png" alt="BizFlow" loading="lazy" />
+                <div class="project-laptop"><img src="assets/img/projects/bizflow.png" alt="BizFlow" loading="lazy" /></div>
                 <a href="assets/img/projects/bizflow.png" class="zoom-btn" title="View larger"
                   aria-label="View larger image">
                   <i class="fas fa-plus"></i>
@@ -944,13 +1162,77 @@
               </div>
             </div>
 
+
+            <div class="project-card group">
+              <div class="project-img-wrap project-device-preview">
+                <img src="assets/img/projects/zimoto-plumbing.jpg" alt="Zimoto Plumbing website displayed across devices" loading="lazy" />
+                <a href="assets/img/projects/zimoto-plumbing.jpg" class="zoom-btn" title="View larger" aria-label="View Zimoto Plumbing project image">
+                  <i class="fas fa-plus" aria-hidden="true"></i>
+                </a>
+              </div>
+              <div class="p-4 sm:p-5">
+                <div class="flex items-start justify-between gap-2 mb-2">
+                  <h3 class="font-semibold text-sm sm:text-base">
+                    <a href="https://zimotoplumbing.com/" target="_blank" rel="noopener" class="hover:underline">Zimoto Plumbing</a>
+                  </h3>
+                  <a href="https://zimotoplumbing.com/" target="_blank" rel="noopener" class="text-xs font-medium text-green-500 hover:text-accent whitespace-nowrap">Visit →</a>
+                </div>
+                <p class="text-xs text-muted mb-3 line-clamp-2">A plumbing services website designed to build trust and help customers make enquiries.</p>
+                <div class="flex flex-wrap gap-1.5">
+                  <span class="tag">Business Website</span><span class="tag">Home Services</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="project-card group">
+              <div class="project-img-wrap project-device-preview">
+                <img src="assets/img/projects/ttds.jpg" alt="Tom Tirivangani School of Divinity website displayed across devices" loading="lazy" />
+                <a href="assets/img/projects/ttds.jpg" class="zoom-btn" title="View larger" aria-label="View Tom Tirivangani School of Divinity project image">
+                  <i class="fas fa-plus" aria-hidden="true"></i>
+                </a>
+              </div>
+              <div class="p-4 sm:p-5">
+                <div class="flex items-start justify-between gap-2 mb-2">
+                  <h3 class="font-semibold text-sm sm:text-base">
+                    <a href="https://ephraim06.github.io/TTDS/" target="_blank" rel="noopener" class="hover:underline">Tom Tirivangani School of Divinity</a>
+                  </h3>
+                  <a href="https://ephraim06.github.io/TTDS/" target="_blank" rel="noopener" class="text-xs font-medium text-green-500 hover:text-accent whitespace-nowrap">Visit →</a>
+                </div>
+                <p class="text-xs text-muted mb-3 line-clamp-2">An online presence for a Canadian school of divinity, introducing its faith-based education and learning community.</p>
+                <div class="flex flex-wrap gap-1.5">
+                  <span class="tag">Education</span><span class="tag">Web Design</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="project-card group">
+              <div class="project-img-wrap project-device-preview">
+                <img src="assets/img/projects/greenvault-electrical.jpg" alt="GreenVault Electrical website displayed across devices" loading="lazy" />
+                <a href="assets/img/projects/greenvault-electrical.jpg" class="zoom-btn" title="View larger" aria-label="View GreenVault Electrical project image">
+                  <i class="fas fa-plus" aria-hidden="true"></i>
+                </a>
+              </div>
+              <div class="p-4 sm:p-5">
+                <div class="flex items-start justify-between gap-2 mb-2">
+                  <h3 class="font-semibold text-sm sm:text-base">
+                    <a href="https://www.greenvaultelectrical.co.za/" target="_blank" rel="noopener" class="hover:underline">GreenVault Electrical</a>
+                  </h3>
+                  <a href="https://www.greenvaultelectrical.co.za/" target="_blank" rel="noopener" class="text-xs font-medium text-green-500 hover:text-accent whitespace-nowrap">Visit →</a>
+                </div>
+                <p class="text-xs text-muted mb-3 line-clamp-2">An electrical services website presenting the business and its expertise to prospective customers.</p>
+                <div class="flex flex-wrap gap-1.5">
+                  <span class="tag">Business Website</span><span class="tag">Electrical Services</span>
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
       </div>
 
       <!-- View More -->
       <div class="text-center mt-8 sm:mt-10">
-        <button id="viewMoreBtn" class="btn-view-more" onclick="toggleProjects()" aria-expanded="false">
+        <button id="viewMoreBtn" class="btn-view-more" onclick="toggleProjects()" aria-expanded="false" aria-controls="hiddenProjectsWrap">
           <span id="viewMoreText">View More Projects</span>
           <i id="viewMoreArrow" class="fas fa-chevron-down arrow-icon text-xs"></i>
         </button>
@@ -966,65 +1248,41 @@
         <h2 class="section-title">Let's Connect</h2>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div class="contact-layout">
         <!-- Contact Info -->
-        <div class="card p-6 sm:p-8 space-y-5">
-          <h3 class="font-semibold text-lg">Contact Information</h3>
+        <div class="card contact-panel">
+          <p class="section-eyebrow mb-3">Start a conversation</p>
+          <h3 class="font-semibold">Have something in mind?</h3>
+          <p class="contact-panel-copy">Let’s talk about your next website, application, or collaboration. Reach out directly or leave a message.</p>
 
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-lg bg-surface flex items-center justify-center flex-shrink-0">
-              <i class="fas fa-envelope text-sm"></i>
-            </div>
-            <div class="min-w-0">
-              <p class="text-xs text-muted">Email</p>
-              <a href="mailto:esamanyayi95@gmail.com"
-                class="text-sm font-medium hover:underline break-all">esamanyayi95@gmail.com</a>
-            </div>
-          </div>
-
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-lg bg-surface flex items-center justify-center flex-shrink-0">
-              <i class="fas fa-phone text-sm"></i>
-            </div>
-            <div>
-              <p class="text-xs text-muted">Phone</p>
-              <a href="tel:+27618514214" class="text-sm font-medium hover:underline">+27 61 851 4214</a>
-            </div>
-          </div>
-
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-lg bg-surface flex items-center justify-center flex-shrink-0">
-              <i class="fas fa-location-dot text-sm"></i>
-            </div>
-            <div>
-              <p class="text-xs text-muted">Location</p>
-              <p class="text-sm font-medium">Western Cape, South Africa</p>
-            </div>
-          </div>
-
-          <div class="flex gap-2 pt-2">
-            <a href="https://github.com/Ephraim06" target="_blank" rel="noopener"
-              class="w-9 h-9 rounded-lg bg-surface flex items-center justify-center hover:bg-surface-dark transition-colors"
-              aria-label="GitHub">
-              <i class="fab fa-github text-sm"></i>
+          <div class="contact-links">
+            <a href="mailto:esamanyayi95@gmail.com" class="contact-icon" aria-label="Send me an email" title="Email">
+              <i class="fas fa-envelope" aria-hidden="true"></i>
             </a>
-            <a href="https://www.linkedin.com/in/ephraim-s-281742148/" target="_blank" rel="noopener"
-              class="w-9 h-9 rounded-lg bg-surface flex items-center justify-center hover:bg-surface-dark transition-colors"
-              aria-label="LinkedIn">
-              <i class="fab fa-linkedin-in text-sm"></i>
+            <a href="tel:+27618514214" class="contact-icon" aria-label="Call me" title="Phone">
+              <i class="fas fa-phone" aria-hidden="true"></i>
+            </a>
+            <a href="https://github.com/Ephraim06" target="_blank" rel="noopener" class="contact-icon" aria-label="GitHub" title="GitHub">
+              <i class="fab fa-github" aria-hidden="true"></i>
+            </a>
+            <a href="https://www.linkedin.com/in/ephraim-s-281742148/" target="_blank" rel="noopener" class="contact-icon" aria-label="LinkedIn" title="LinkedIn">
+              <i class="fab fa-linkedin-in" aria-hidden="true"></i>
             </a>
           </div>
 
-          <a href="assets/documents/Ephraim Samanyayi_CV.pdf" download
-            class="btn-primary w-full justify-center text-sm">
-            <i class="fas fa-download"></i> Download CV
-          </a>
+          <div class="contact-cv">
+            <p>A closer look at my experience and skills.</p>
+            <a href="assets/documents/Ephraim Samanyayi_CV.pdf" download
+              class="btn-primary text-sm">
+              <i class="fas fa-download" aria-hidden="true"></i> Download CV
+            </a>
+          </div>
         </div>
 
         <!-- Contact Form -->
         <div class="card p-6 sm:p-8">
           <h3 class="font-semibold text-lg mb-5">Send a Message</h3>
-          <form action="https://formspree.io/f/mnndqrbr" method="POST" class="space-y-4">
+          <form id="contact-form" action="https://formspree.io/f/mnndqrbr" method="POST" class="space-y-4">
             <div>
               <label for="name" class="block text-xs font-medium text-muted mb-1">Name</label>
               <input type="text" id="name" name="name" required class="input-field" placeholder="Your name" />
@@ -1046,11 +1304,21 @@
             <button type="submit" class="btn-primary w-full justify-center text-sm">
               <i class="fas fa-paper-plane"></i> Send Message
             </button>
+            <p id="form-status" class="form-error" role="status" aria-live="polite" aria-atomic="true"></p>
           </form>
         </div>
       </div>
     </div>
   </section>
+
+  <dialog id="contact-success" class="success-modal" aria-labelledby="success-title" aria-describedby="success-description">
+    <div class="success-mark" aria-hidden="true"><i class="fas fa-check"></i></div>
+    <h2 id="success-title">Message sent!</h2>
+    <p id="success-description">Thanks for reaching out. I’ll get back to you as soon as I can.</p>
+    <form method="dialog">
+      <button class="btn-primary" autofocus>Back to portfolio</button>
+    </form>
+  </dialog>
 
   <!-- ==================== FOOTER ==================== -->
   <footer class="site-footer py-10 sm:py-12 px-4">
@@ -1091,6 +1359,84 @@
   <script>
     document.getElementById('current-year').textContent = new Date().getFullYear();
 
+    const contactForm = document.getElementById('contact-form');
+    const contactSubmit = contactForm.querySelector('button[type="submit"]');
+    const formStatus = document.getElementById('form-status');
+    const successModal = document.getElementById('contact-success');
+    // Keep native constraints for semantics, but render validation in the page.
+    contactForm.noValidate = true;
+    const contactFields = [...contactForm.querySelectorAll('.input-field')];
+    let validationStarted = false;
+    contactFields.forEach((field) => {
+      const error = document.createElement('p');
+      error.id = `${field.id}-error`;
+      error.className = 'field-error';
+      error.hidden = true;
+      field.setAttribute('aria-describedby', error.id);
+      field.after(error);
+      field.addEventListener('input', () => {
+        if (validationStarted) validateContactField(field);
+      });
+    });
+
+    function validateContactField(field) {
+      const label = contactForm.querySelector(`label[for="${field.id}"]`).textContent.toLowerCase();
+      let message = '';
+      if (!field.value.trim()) message = `Please enter your ${label}.`;
+      else if (field.validity.typeMismatch) message = 'Please enter a valid email address, such as you@example.com.';
+      const error = document.getElementById(`${field.id}-error`);
+      error.textContent = message;
+      error.hidden = !message;
+      if (message) field.setAttribute('aria-invalid', 'true');
+      else field.removeAttribute('aria-invalid');
+      return !message;
+    }
+
+    contactForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      if (contactSubmit.disabled) return;
+      validationStarted = true;
+      formStatus.textContent = '';
+      const invalidFields = contactFields.filter((field) => !validateContactField(field));
+      if (invalidFields.length) {
+        formStatus.textContent = 'Please correct the highlighted fields before sending your message.';
+        invalidFields[0].focus();
+        return;
+      }
+      const data = new FormData(contactForm);
+      const originalButton = contactSubmit.innerHTML;
+      contactSubmit.disabled = true;
+      contactForm.setAttribute('aria-busy', 'true');
+      formStatus.textContent = '';
+      contactSubmit.innerHTML = '<span class="form-spinner" aria-hidden="true"></span> Sending…';
+
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 20000);
+      try {
+        const response = await fetch(contactForm.action, {
+          method: 'POST',
+          body: data,
+          headers: { Accept: 'application/json' },
+          signal: controller.signal,
+        });
+        if (!response.ok) throw new Error('Submission failed');
+        contactForm.reset();
+        validationStarted = false;
+        successModal.showModal();
+      } catch (error) {
+        formStatus.textContent = error.name === 'AbortError'
+          ? 'The request timed out, so delivery could not be confirmed. Please try again shortly or contact me by email.'
+          : 'Your message could not be sent. Please try again or contact me by email.';
+      } finally {
+        clearTimeout(timeout);
+        contactSubmit.disabled = false;
+        contactSubmit.innerHTML = originalButton;
+        contactForm.removeAttribute('aria-busy');
+      }
+    });
+
+    successModal.addEventListener('close', () => contactSubmit.focus({ preventScroll: true }));
+
     function toggleProjects() {
       const wrap = document.getElementById('hiddenProjectsWrap');
       const btn = document.getElementById('viewMoreBtn');
@@ -1100,13 +1446,14 @@
 
       if (isExpanded) {
         wrap.classList.remove('expanded');
+        wrap.inert = true;
         btn.classList.remove('expanded');
         text.textContent = 'View More Projects';
         arrow.style.transform = 'rotate(0deg)';
         btn.setAttribute('aria-expanded', 'false');
-        document.getElementById('projects').scrollIntoView({ behavior: 'smooth', block: 'start' });
       } else {
         wrap.classList.add('expanded');
+        wrap.inert = false;
         btn.classList.add('expanded');
         text.textContent = 'View Less';
         arrow.style.transform = 'rotate(180deg)';
